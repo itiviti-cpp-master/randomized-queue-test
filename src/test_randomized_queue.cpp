@@ -78,7 +78,7 @@ TYPED_TEST(RandomizedQueueTest, singleton)
 
 TYPED_TEST(RandomizedQueueTest, many)
 {
-    const std::vector<int> etalon_sorted = {0, 1, 2, 3, 4};
+    const std::vector<int> etalon_sorted = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     for (auto i : etalon_sorted) {
         this->queue.enqueue(i);
     }
@@ -147,9 +147,9 @@ TYPED_TEST(RandomizedQueueTest, iterator_modify)
 TYPED_TEST(RandomizedQueueTest, lot_of_modifications)
 {
     int first = 1234;
-    int second = 1234 + 150000;
-    int third = second + 150000;
-    int fourth = third + 150000;
+    int second = 1234 + 70000;
+    int third = second + 70000;
+    int fourth = third + 70000;
     const std::size_t n1 = second - first;
     const std::size_t n2 = third - first;
     const std::size_t n3 = fourth - first;
