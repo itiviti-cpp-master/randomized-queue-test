@@ -29,8 +29,6 @@ public:
 
     friend bool operator == (const int lhs, const NonCopyable & rhs)
     { return lhs == rhs.m_data; }
-    friend bool operator == (const NonCopyable & lhs, const int rhs)
-    { return lhs.m_data == rhs; }
 };
 
 template <class T>
