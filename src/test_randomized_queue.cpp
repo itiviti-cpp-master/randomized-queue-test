@@ -35,12 +35,46 @@ template <class T>
 struct RandomizedQueueTest : ::testing::Test
 {
     randomized_queue<T> queue;
+
+    const randomized_queue<T> & const_queue()
+    { return queue; }
 };
 
 using TestedTypes = ::testing::Types<int, NonCopyable>;
 TYPED_TEST_SUITE(RandomizedQueueTest, TestedTypes);
 
 } // anonymous namespace
+
+TYPED_TEST(RandomizedQueueTest, types)
+{
+    auto it = this->queue.begin();
+    auto const_it = this->const_queue().begin();
+    const bool is_ref = std::is_same_v<TypeParam &, decltype(*it)>;
+    const bool is_const_ref = std::is_same_v<const TypeParam &, decltype(*const_it)>;
+    EXPECT_TRUE(is_ref);
+    EXPECT_TRUE(is_const_ref);
+    const bool is_ptr = std::is_same_v<TypeParam *, decltype(it.operator ->())>;
+    const bool is_const_ptr = std::is_same_v<const TypeParam *, decltype(const_it.operator ->())>;
+    EXPECT_TRUE(is_ptr);
+    EXPECT_TRUE(is_const_ptr);
+}
+
+TYPED_TEST(RandomizedQueueTest, iterators)
+{
+    this->queue.enqueue(-1);
+    this->queue.enqueue(139);
+    auto it1 = this->queue.begin();
+    auto it2 = it1;
+    const auto b_it = it1;
+    EXPECT_EQ(it1, it2);
+    EXPECT_EQ(*it1, *it2);
+    it1++;
+    ++it2;
+    EXPECT_EQ(it1, it2);
+    EXPECT_EQ(*it1, *it2);
+    EXPECT_EQ(1, std::distance(b_it, it1));
+    EXPECT_EQ(1, std::distance(b_it, it2));
+}
 
 TYPED_TEST(RandomizedQueueTest, empty)
 {
@@ -76,18 +110,18 @@ TYPED_TEST(RandomizedQueueTest, many)
     for (auto i : etalon_sorted) {
         this->queue.enqueue(i);
     }
-    EXPECT_FALSE(this->queue.empty());
-    EXPECT_EQ(etalon_sorted.size(), this->queue.size());
+    EXPECT_FALSE(this->const_queue().empty());
+    EXPECT_EQ(etalon_sorted.size(), this->const_queue().size());
     std::size_t count = 0;
-    for ([[maybe_unused]] const auto & x : this->queue) {
+    for ([[maybe_unused]] const auto & x : this->const_queue()) {
         ++count;
     }
     EXPECT_EQ(etalon_sorted.size(), count);
 
     const auto b1 = this->queue.cbegin();
     const auto e1 = this->queue.cend();
-    const auto b2 = this->queue.cbegin();
-    const auto e2 = this->queue.cend();
+    const auto b2 = this->const_queue().begin();
+    const auto e2 = this->const_queue().end();
 
     std::vector<int> v11, v12, v21, v22;
     std::copy(b1, e1, std::back_inserter(v11));
@@ -103,7 +137,7 @@ TYPED_TEST(RandomizedQueueTest, many)
     EXPECT_NE(v11, v21);
 
     for (int i = 0; i < 100; ++i) {
-        EXPECT_NE(etalon_sorted.end(), std::find(etalon_sorted.begin(), etalon_sorted.end(), this->queue.sample()));
+        EXPECT_NE(etalon_sorted.end(), std::find(etalon_sorted.begin(), etalon_sorted.end(), this->const_queue().sample()));
     }
 
     std::vector<int> v;
