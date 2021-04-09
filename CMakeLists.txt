@@ -8,6 +8,7 @@ project(${PROJECT_NAME})
 
 # Inlcude directories
 include_directories(${ROOT_INCLUDES})
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 # Source files
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
