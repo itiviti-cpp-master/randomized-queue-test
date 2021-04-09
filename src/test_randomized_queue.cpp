@@ -2,6 +2,10 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 namespace {
 
 class NonCopyable
@@ -44,6 +48,64 @@ using TestedTypes = ::testing::Types<int, NonCopyable>;
 TYPED_TEST_SUITE(RandomizedQueueTest, TestedTypes);
 
 } // anonymous namespace
+
+TEST(RandomizedQueueEnqueueTest, enqueue)
+{
+    randomized_queue<std::string> queue;
+    std::string s1 = "Hello, world";
+    const std::string s2 = "Bonjour monde";
+    queue.enqueue(s1);
+    queue.enqueue(s2);
+    queue.enqueue("Hallo wereld");
+    EXPECT_EQ("Hello, world", s1);
+    for (auto & s : queue) {
+        s += '!';
+    }
+    std::vector<std::string> elements;
+    for (const auto & s : queue) {
+        elements.push_back(s);
+    }
+    ASSERT_EQ(3, elements.size());
+    std::sort(elements.begin(), elements.end());
+    EXPECT_EQ("Bonjour monde!", elements[0]);
+    EXPECT_EQ("Hallo wereld!", elements[1]);
+    EXPECT_EQ("Hello, world!", elements[2]);
+}
+
+TEST(RandomizedQueueRandTest, compare_randomness)
+{
+    randomized_queue<int> q1, q2, q3;
+    randomized_queue<std::string> q4, q5;
+    for (int i = 0; i < 5; ++i) {
+        q1.enqueue(i);
+        q2.enqueue(i);
+        q3.enqueue(i);
+        q4.enqueue(std::to_string(i));
+        q5.enqueue(std::to_string(i));
+    }
+    int count = 0;
+    int e1 = q1.sample(), e2 = q2.sample(), e3 = q3.sample();
+    int e4 = std::stoi(q4.sample()), e5 = std::stoi(q5.sample());
+    if (e1 == e2) {
+        ++count;
+    }
+    if (e1 == e3) {
+        ++count;
+    }
+    if (e1 == e4) {
+        ++count;
+    }
+    if (e1 == e5) {
+        ++count;
+    }
+    if (e2 == e3) {
+        ++count;
+    }
+    if (e4 == e5) {
+        ++count;
+    }
+    EXPECT_LT(count, 3) << "Too much for coincidence";
+}
 
 TYPED_TEST(RandomizedQueueTest, types)
 {
