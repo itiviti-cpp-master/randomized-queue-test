@@ -1,4 +1,5 @@
 #include "randomized_queue.h"
+#include "test_iterator.h"
 
 #include <gtest/gtest.h>
 
@@ -42,6 +43,21 @@ struct RandomizedQueueTest : ::testing::Test
 
     const randomized_queue<T> & const_queue()
     { return queue; }
+
+    // Initialize sample data for generic iterator tests
+    randomized_queue<T> & not_empty_container()
+    {
+        if (sample.empty()) {
+            sample.enqueue(1);
+            sample.enqueue(2);
+            sample.enqueue(3);
+            sample.enqueue(33);
+            sample.enqueue(190);
+        }
+        return sample;
+    }
+
+    randomized_queue<T> sample;
 };
 
 using TestedTypes = ::testing::Types<int, NonCopyable>;
@@ -291,3 +307,6 @@ TYPED_TEST(RandomizedQueueTest, lot_of_modifications)
     }
     EXPECT_EQ(n3 - n1, count);
 }
+
+using TypesToTest = ::testing::Types<RandomizedQueueTest<int>>;
+INSTANTIATE_TYPED_TEST_SUITE_P(RandomizedQueue, IteratorTest, TypesToTest);
