@@ -97,12 +97,16 @@ void bidirectional(Iterator begin, Iterator end)
         reference.emplace_back(it);
     }
 
+    auto r_it = reference.rbegin(), r_end = reference.rend();
     auto back = end;
-    --back;
-    size_t i = reference.size() - 1;
+    std::size_t count = 0;
     do {
-        ASSERT_EQ(reference[i], back--);
-    } while (i-- > 0);
+        --back;
+        EXPECT_EQ(*r_it, back);
+        ++r_it;
+        ++count;
+    } while (begin != back && r_it != r_end);
+    EXPECT_EQ(reference.size(), count);
 }
 
 template<typename Iterator>
