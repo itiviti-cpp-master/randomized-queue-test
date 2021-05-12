@@ -92,7 +92,7 @@ TEST(RandomizedQueueRandTest, compare_randomness)
 {
     randomized_queue<int> q1, q2, q3;
     randomized_queue<std::string> q4, q5;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 50; ++i) {
         q1.enqueue(i);
         q2.enqueue(i);
         q3.enqueue(i);
