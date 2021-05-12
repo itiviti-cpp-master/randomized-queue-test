@@ -2,7 +2,6 @@
 #include <functional>
 
 #include <gtest/gtest.h>
-#include <gtest/gtest-spi.h>
 
 namespace iterator_test {
 
@@ -11,7 +10,6 @@ void test_multipass(Iterator begin, Iterator end)
 {
     // Check iterator allows multipass
     size_t count = 10;
-    ASSERT_TRUE(begin != end);
     std::vector<typename Iterator::value_type> expected; 
     std::copy(begin, end, std::back_inserter(expected));
 
@@ -28,25 +26,40 @@ void test_multipass(Iterator begin, Iterator end)
 template<typename Iterator>
 void forward(Iterator begin, Iterator end)
 {
+    ASSERT_TRUE(begin != end);
+
+    // Check iterator traits
+    static_assert(std::is_copy_constructible_v<Iterator>);
+    static_assert(std::is_copy_assignable_v<Iterator>);
+    static_assert(std::is_destructible_v<Iterator>);
+    static_assert(std::is_swappable_v<Iterator>);
+    static_assert(std::is_default_constructible_v<Iterator>);
+
+    static_assert(std::is_lvalue_reference_v<typename Iterator::reference>);
+    static_assert(std::is_convertible_v<std::remove_reference_t<typename Iterator::reference>, typename Iterator::value_type>);
+
+    static_assert(std::is_pointer_v<typename Iterator::pointer>);
+    static_assert(std::is_convertible_v<std::remove_pointer_t<typename Iterator::pointer>, typename Iterator::value_type>);
+
+    static_assert(std::is_same_v<std::remove_const_t<std::remove_reference_t<decltype(*begin)>>, typename Iterator::value_type>);
+
     {
-        // Check iterator traits
-        ASSERT_TRUE(std::is_copy_constructible_v<Iterator>);
-        ASSERT_TRUE(std::is_copy_assignable_v<Iterator>);
-        ASSERT_TRUE(std::is_destructible_v<Iterator>);
-        ASSERT_TRUE(std::is_swappable_v<Iterator>);
-        ASSERT_TRUE(std::is_default_constructible_v<Iterator>);
+        auto v = begin;
+        static_assert(std::is_lvalue_reference_v<decltype(++v)>);
+        v = begin;
+        static_assert(std::is_same_v<std::remove_reference_t<decltype(++v)>, Iterator>);
+        v = begin;
+        static_assert(!std::is_reference_v<decltype(v++)>);
+        v = begin;
+        static_assert(std::is_same_v<decltype(v++), Iterator>);
+    }
 
-        ASSERT_TRUE(std::is_lvalue_reference_v<typename Iterator::reference>);
-        auto convertible = std::is_convertible_v<std::remove_reference_t<typename Iterator::reference>, typename Iterator::value_type>;
-        ASSERT_TRUE(convertible);
-
-        ASSERT_TRUE(std::is_pointer_v<typename Iterator::pointer>);
-        convertible = std::is_convertible_v<std::remove_pointer_t<typename Iterator::pointer>, typename Iterator::value_type>;
-        ASSERT_TRUE(convertible);
-
+    {
         // Equality comparable
         Iterator a = begin, b = begin, c = begin;
-        ASSERT_TRUE(a == a);
+        auto v = (a == a);
+        static_assert(std::is_convertible_v<decltype(v), bool>);
+        ASSERT_TRUE(v);
         ASSERT_TRUE((a == b) && (b == a));
         ASSERT_TRUE((a == b) && (b == c) && (c == a));
         ASSERT_FALSE(a != a);
@@ -59,16 +72,13 @@ void forward(Iterator begin, Iterator end)
 
     {
         // Check iterator operations
-        ASSERT_TRUE(begin != end);
         auto a = begin;
         auto the_a = a++;
-        auto same_type = std::is_same_v<Iterator, decltype(the_a)>;
-        ASSERT_TRUE(same_type);
+        static_assert(std::is_same_v<Iterator, decltype(the_a)>);
 
         auto b = begin;
         auto next_b = ++b;
-        same_type = std::is_same_v<Iterator, decltype(next_b)>;
-        ASSERT_TRUE(same_type);
+        static_assert(std::is_same_v<Iterator, decltype(next_b)>);
 
         ASSERT_TRUE(a == b);
         ASSERT_TRUE((a != begin) && (b != begin));
@@ -77,6 +87,7 @@ void forward(Iterator begin, Iterator end)
             ASSERT_TRUE(*a == *b);
         }
     }
+
     test_multipass(begin, end);
 }
 
@@ -85,12 +96,22 @@ void bidirectional(Iterator begin, Iterator end)
 {
     ASSERT_TRUE(begin != end);
 
+    {
+        auto v = end;
+        static_assert(std::is_lvalue_reference_v<decltype(--v)>);
+        v = end;
+        static_assert(std::is_same_v<std::remove_reference_t<decltype(--v)>, Iterator>);
+        v = end;
+        static_assert(!std::is_reference_v<decltype(v--)>);
+        v = end;
+        static_assert(std::is_same_v<decltype(v--), Iterator>);
+    }
+
     auto a = begin, b = begin;
     ASSERT_TRUE(--(++a) == b);
     a++; b++;
     auto prev_a = --a, prev_b = --b;
     ASSERT_TRUE(prev_a == prev_b);
-
 
     std::vector<Iterator> reference;
     for (auto it = begin; it != end; ++it) {
@@ -114,24 +135,28 @@ void random_access(Iterator begin, Iterator end)
 {
     ASSERT_TRUE(begin != end);
     auto /* available_distance */ l = std::distance(begin, end);
-    bool is_same = std::is_same_v<typename Iterator::difference_type, decltype(l)>;
-    ASSERT_TRUE(is_same);
+    static_assert(std::is_same_v<typename Iterator::difference_type, decltype(l)>);
+    static_assert(std::is_same_v<typename Iterator::difference_type, decltype(end - begin)>);
     ASSERT_GE(l, 2);
     auto n = l - 1;
 
-    Iterator b = begin;
-    auto f = (b += n);
-    is_same = std::is_same_v<Iterator, decltype(f)>;
-    ASSERT_TRUE(is_same);
+    {
+        auto v = begin;
+        static_assert(std::is_same_v<Iterator&, decltype(v += n)>);
+    }
 
-    Iterator other_b = begin;
+    auto b = begin;
+    auto f = (b += n);
+
+    auto other_b = begin;
     auto j = n;
     for (j = 0; j < n; ++j) {
         ++other_b;
     }
     ASSERT_TRUE(other_b == b);
 
-    Iterator f1 = (begin + n), f2 = (n + begin);
+    auto f1 = (begin + n), f2 = (n + begin);
+    static_assert(std::is_same_v<Iterator, decltype(f1)>);
     EXPECT_TRUE(f == f1);
     EXPECT_TRUE(f == f2);
 
@@ -139,6 +164,7 @@ void random_access(Iterator begin, Iterator end)
     ASSERT_TRUE(r == begin);
 
     auto i = begin;
+    static_assert(std::is_convertible_v<typename Iterator::reference, decltype(i[n])>);
     ASSERT_TRUE(i[n] == *f1);
     ASSERT_TRUE(begin < f1);
     ASSERT_TRUE(begin < end);
@@ -190,19 +216,25 @@ void run_multithread(std::vector<Job<Iterator>> jobs)
 {
     std::cout << "Start " << jobs.size() << " threads\n";
     std::vector<std::thread> v;
-    for (auto & j : jobs) {
-        v.emplace_back([&j] ()
+    for (const auto & j : jobs) {
+        v.emplace_back([j] ()
                 { auto [b, e] = j.range(); j.test(b, e); });
     }
 
     for (auto & t : v) {
         t.join();
     }
+    std::cout << "All threads have been joined\n";
 }
 
 template<typename Iterator>
 void test_basic(Iterator begin, Iterator end)
 {
+    static_assert(!std::is_same_v<typename std::iterator_traits<Iterator>::iterator_category(), std::input_iterator_tag>);
+    static_assert(!std::is_same_v<typename std::iterator_traits<Iterator>::iterator_category(), std::output_iterator_tag>);
+    // FIXME: uncomment this as soon as C++20 is available
+    // static_assert(!std::is_same_v<typename std::iterator_traits<Iterator>::iterator_category(), std::contiguous_iterator_tag>);
+
     traits(begin, end, typename std::iterator_traits<Iterator>::iterator_category());
 }
 
