@@ -57,6 +57,11 @@ struct RandomizedQueueTest : ::testing::Test
         return sample;
     }
 
+    T create(const int x)
+    {
+        return x;
+    }
+
     randomized_queue<T> sample;
 };
 
@@ -167,7 +172,7 @@ TYPED_TEST(RandomizedQueueTest, empty)
 
 TYPED_TEST(RandomizedQueueTest, singleton)
 {
-    this->queue.enqueue(0);
+    this->queue.enqueue(this->create(0));
     EXPECT_FALSE(this->queue.empty());
     EXPECT_EQ(1, this->queue.size());
     EXPECT_EQ(0, this->queue.sample());
@@ -186,7 +191,7 @@ TYPED_TEST(RandomizedQueueTest, many)
 {
     const std::vector<int> etalon_sorted = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     for (auto i : etalon_sorted) {
-        this->queue.enqueue(i);
+        this->queue.enqueue(this->create(i));
     }
     EXPECT_FALSE(this->const_queue().empty());
     EXPECT_EQ(etalon_sorted.size(), this->const_queue().size());
